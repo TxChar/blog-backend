@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, status, Depends
 
 from app.modules.blogs.schema import (
     BlogCreate,
@@ -8,6 +8,8 @@ from app.modules.blogs.schema import (
     BlogResponse,
 )
 from app.modules.blogs.service import BlogService
+from app.core.dependencies import get_current_admin
+
 
 router = APIRouter()
 service = BlogService()
@@ -21,6 +23,7 @@ service = BlogService()
     "",
     response_model=BlogResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_admin)],
 )
 async def create_blog(payload: BlogCreate):
     return await service.create_blog(payload)
@@ -76,6 +79,7 @@ async def get_blog_by_slug(slug: str):
 @router.put(
     "/{blog_id}",
     response_model=BlogResponse,
+    dependencies=[Depends(get_current_admin)],
 )
 async def update_blog(
     blog_id: str,
@@ -90,6 +94,7 @@ async def update_blog(
 @router.delete(
     "/{blog_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_current_admin)],
 )
 async def delete_blog(blog_id: str):
     await service.delete_blog(blog_id)
