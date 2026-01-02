@@ -15,6 +15,7 @@ logger = init_logger(__name__)
 
 app = FastAPI(
     title=settings.app_name,
+    version=settings.version,
     lifespan=lifespan,
 )
 

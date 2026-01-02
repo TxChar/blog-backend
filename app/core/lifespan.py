@@ -8,6 +8,7 @@ from app.core import database
 from app.core.database import init_indexes
 from app.modules.blogs.repository import BlogRepository
 from app.utils.logger import init_logger
+from app.api.v1 import user
 
 logger = init_logger(__name__)
 
@@ -41,7 +42,7 @@ async def lifespan(app: FastAPI):
         if not settings.validation_check():
             raise RuntimeError("Invalid environment for DEV mode")
 
-        # await user.create_admin_account()
+        await user.create_admin_account()
 
     except Exception as e:
         logger.error("❌ MongoDB startup failed:", e)

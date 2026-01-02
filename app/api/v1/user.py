@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from bson import ObjectId
+from datetime import datetime, timezone
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.modules.users.schema import (
     UserCreate,
@@ -7,11 +9,36 @@ from app.modules.users.schema import (
     UserResponse,
     UserListResponse,
 )
+from app.core.security import hash_password
 from app.modules.users.service import UserService
 from app.core.dependencies import get_current_admin
+from app.utils.logger import init_logger
 
 router = APIRouter(prefix="/users", tags=["Users"])
 service = UserService()
+logger = init_logger(__name__)
+
+
+async def create_admin_account():
+    """
+    Create an admin account.
+    """
+    admin_username = "admin@example.com"
+    admin_password = "Example@123"
+
+    admin_payload = {
+        "email": admin_username,
+        "username": admin_username,
+        "password": admin_password,
+        "hashedPassword": hash_password(admin_password),
+        "is_admin": True,
+        "is_active": True,
+    }
+    try:
+        await service.create_user(UserCreate(**admin_payload))
+        logger.info("Admin account created successfully.")
+    except Exception as e:
+        logger.debug(f"Can't auto creating admin account: {e}")
 
 
 @router.post(
