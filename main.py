@@ -1,7 +1,8 @@
 import atexit
 import uvicorn
+import time
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.dependencies import get_current_admin
@@ -28,6 +29,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # add auth for test purpose
+# Middleware for logging requests
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+
+    # Log incoming request
+    response = await call_next(request)
+
+    # Log response with duration
+    duration = (time.time() - start_time) * 1000  # ms
+    logger.info(
+        f"{request.method} {request.url.path} - STATUS {response.status_code} ({duration:.2f}ms)")
+
+    return response
 
 
 @app.get("/ping",  dependencies=[Depends(get_current_admin)],)
