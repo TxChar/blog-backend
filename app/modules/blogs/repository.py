@@ -64,16 +64,58 @@ class BlogRepository:
     async def list(
         self,
         published: Optional[bool] = None,
+        title: str = "",
+        tags: str = "",
+        # created_date_asc, created_date_desc, updated_date_asc, updated_date_desc, title_asc, title_desc
+        sort_by: str = "created_date_desc",
         limit: int = 20,
         skip: int = 0,
-    ) -> List[BlogModel]:
+    ) -> tuple[List[BlogModel], int]:
+        """
+        List blogs with filtering and sorting
+
+        sort_by options:
+        - created_date_asc: created date ก่อน (oldest first)
+        - created_date_desc: created date หลัง (newest first) - DEFAULT
+        - updated_date_asc: updated date ก่อน (oldest first)
+        - updated_date_desc: updated date หลัง (newest first)
+        - title_asc: title ก-ฮ (A-Z)
+        - title_desc: title ฮ-ก (Z-A)
+        """
         query = {}
+
+        # Filter by published
         if published is not None:
             query["published"] = published
 
+        # Filter by title (case-insensitive)
+        if title:
+            query["title"] = {"$regex": title, "$options": "i"}
+
+        # Filter by tags (match any tag in the list)
+        if tags:
+            tag_list = [t.strip() for t in tags.split(",")]
+            query["tags"] = {"$in": tag_list}
+
+        # Get total count before pagination
+        total = await self.collection.count_documents(query)
+
+        # Sort mapping
+        sort_map = {
+            "created_date_asc": ("created_at", 1),
+            "created_date_desc": ("created_at", -1),
+            "updated_date_asc": ("updated_at", 1),
+            "updated_date_desc": ("updated_at", -1),
+            "title_asc": ("title", 1),
+            "title_desc": ("title", -1),
+        }
+
+        # Default sort: newest first
+        sort_key, sort_order = sort_map.get(sort_by, ("created_at", -1))
+
         cursor = (
             self.collection.find(query)
-            .sort("created_at", -1)
+            .sort(sort_key, sort_order)
             .skip(skip)
             .limit(limit)
         )
@@ -82,7 +124,7 @@ class BlogRepository:
         async for doc in cursor:
             blogs.append(BlogModel.from_mongo(doc))
 
-        return blogs
+        return blogs, total
 
     # ----------------------
     # Update

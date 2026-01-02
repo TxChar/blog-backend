@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from bson import ObjectId
 
@@ -16,6 +16,7 @@ class BlogModel:
         content: str,
         summary: Optional[str] = None,
         cover_image: Optional[str] = None,
+        tags: Optional[List[str]] = None,
         published: bool = False,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -27,6 +28,7 @@ class BlogModel:
         self.summary = summary
         self.content = content
         self.cover_image = cover_image
+        self.tags = tags or []
         self.published = published
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at
@@ -39,6 +41,7 @@ class BlogModel:
             "summary": self.summary,
             "content": self.content,
             "cover_image": self.cover_image,
+            "tags": self.tags,
             "published": self.published,
             "created_at": self.created_at,
             "updated_at": self.updated_at,

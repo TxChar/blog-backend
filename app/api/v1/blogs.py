@@ -34,18 +34,49 @@ async def create_blog(payload: BlogCreate):
 # ----------------------
 @router.get(
     "",
-    response_model=List[BlogResponse],
+    response_model=dict,
 )
 async def list_blogs(
     published: Optional[bool] = Query(
         None,
         description="Filter by published status",
     ),
+    title: str = Query(
+        "",
+        description="Filter by title (case-insensitive)",
+    ),
+    tags: str = Query(
+        "",
+        description="Filter by tags (comma-separated, e.g. 'python,webdev')",
+    ),
+    sort_by: str = Query(
+        "created_date_desc",
+        description="Sort by: created_date_asc, created_date_desc (default), updated_date_asc, updated_date_desc, title_asc, title_desc",
+    ),
     limit: int = Query(20, ge=1, le=100),
     skip: int = Query(0, ge=0),
 ):
+    """
+    List blogs with advanced filtering and sorting
+
+    **Filter Parameters:**
+    - title: Filter by blog title (partial match, case-insensitive)
+    - tags: Filter by tags (comma-separated, e.g. 'python,webdev')
+    - published: Filter by published status (true/false)
+
+    **Sort Options:**
+    - created_date_asc: oldest first (ก่อน)
+    - created_date_desc: newest first (หลัง) - DEFAULT
+    - updated_date_asc: oldest updated first
+    - updated_date_desc: newest updated first
+    - title_asc: A-Z (ก-ฮ)
+    - title_desc: Z-A (ฮ-ก)
+    """
     return await service.list_blogs(
         published=published,
+        title=title,
+        tags=tags,
+        sort_by=sort_by,
         limit=limit,
         skip=skip,
     )
