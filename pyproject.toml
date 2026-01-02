@@ -20,6 +20,9 @@ dependencies = [
     "python-slugify>=8.0.4",
     "ruff>=0.14.10",
     "uvicorn>=0.40.0",
+    "jwcrypto>=1.5.6",
+    "aiohttp>=3.13.2",
+    "bcrypt==4.3.0",
 ]
 
 [tool.black]

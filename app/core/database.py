@@ -1,5 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
+from app.utils.logger import init_logger
+
+logger = init_logger(__name__)
 
 client: AsyncIOMotorClient | None = None
 
@@ -24,6 +27,6 @@ async def init_indexes():
             "expires_at",
             expireAfterSeconds=172800  # 2 days: 2 * 24 * 60 * 60
         )
-        print("✅ TTL Index created on token_blacklist collection")
+        logger.debug("✅ TTL Index created on token_blacklist collection")
     except Exception as e:
-        print(f"⚠️  Error creating TTL index: {e}")
+        logger.error(f"⚠️  Error creating TTL index: {e}")

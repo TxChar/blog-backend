@@ -7,11 +7,14 @@ from app.core.config import settings
 from app.core import database
 from app.core.database import init_indexes
 from app.modules.blogs.repository import BlogRepository
+from app.utils.logger import init_logger
+
+logger = init_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 Application starting...")
+    logger.info("🚀 Application starting...")
 
     # ---------------------
     # MongoDB Startup
@@ -22,20 +25,20 @@ async def lifespan(app: FastAPI):
     )
 
     try:
-        print("🔌 Connecting to MongoDB...")
+        logger.info("🔌 Connecting to MongoDB...")
         await database.client.admin.command("ping")
-        print("✅ MongoDB connected")
+        logger.info("✅ MongoDB connected")
 
         # Create indexes
         blog_repo = BlogRepository()
         await blog_repo.ensure_indexes()
-        print("📌 MongoDB indexes ensured")
+        logger.info("📌 MongoDB indexes ensured")
 
         # Initialize TTL indexes
         await init_indexes()
 
     except Exception as e:
-        print("❌ MongoDB startup failed:", e)
+        logger.error("❌ MongoDB startup failed:", e)
         raise
 
     yield
@@ -43,6 +46,6 @@ async def lifespan(app: FastAPI):
     # ---------------------
     # Shutdown
     # ---------------------
-    print("🛑 Shutting down application...")
+    logger.info("🛑 Shutting down application...")
     database.client.close()
-    print("🛑 MongoDB disconnected")
+    logger.info("🛑 MongoDB disconnected")
