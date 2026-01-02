@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.core.config import settings
 from app.core import database
+from app.core.database import init_indexes
 from app.modules.blogs.repository import BlogRepository
 
 
@@ -29,6 +30,9 @@ async def lifespan(app: FastAPI):
         blog_repo = BlogRepository()
         await blog_repo.ensure_indexes()
         print("📌 MongoDB indexes ensured")
+
+        # Initialize TTL indexes
+        await init_indexes()
 
     except Exception as e:
         print("❌ MongoDB startup failed:", e)

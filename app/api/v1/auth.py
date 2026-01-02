@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.security import HTTPAuthorizationCredentials
 
 from app.modules.auth.schema import (
     LoginRequest,
     TokenResponse,
 )
 from app.modules.auth.service import AuthService
+from app.core.dependencies import http_bearer
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -15,9 +17,9 @@ service = AuthService()
     "/login",
     response_model=TokenResponse,
 )
-def login(payload: LoginRequest):
+async def login(payload: LoginRequest):
     try:
-        token = service.login(
+        token = await service.login(
             payload.username,
             payload.password,
         )
@@ -26,4 +28,22 @@ def login(payload: LoginRequest):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
+        )
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK
+)
+async def logout(credentials: HTTPAuthorizationCredentials = Depends(http_bearer)):
+    """
+    Logout endpoint - revoke token by adding to blacklist
+    """
+    try:
+        await service.logout(credentials.credentials)
+        return {"message": "Successfully logged out"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
         )

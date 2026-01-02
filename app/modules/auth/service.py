@@ -1,19 +1,64 @@
+from jose import jwt, JWTError
+
 from app.core.security import (
     verify_password,
     create_access_token,
 )
-
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD_HASH = "$2b$12$..."  # bcrypt hash
+from app.core.config import settings
+from app.core.database import get_database
+from app.modules.auth.repository import AuthRepository
 
 
 class AuthService:
 
-    def login(self, username: str, password: str) -> str:
-        if username != ADMIN_USERNAME:
+    async def login(self, username: str, password: str) -> str:
+        db = get_database()
+
+        # Query admin user จาก database
+        user = await db.users.find_one({"username": username})
+
+        if not user:
             raise ValueError("Invalid credentials")
 
-        if not verify_password(password, ADMIN_PASSWORD_HASH):
+        if not verify_password(password, user["password_hash"]):
             raise ValueError("Invalid credentials")
 
-        return create_access_token(subject=username)
+        token, jti, expires_at = create_access_token(subject=username)
+        return token
+
+    async def logout(self, token: str) -> None:
+        """Blacklist token on logout"""
+        try:
+            # Decode token to get JTI, expiration, and username
+            payload = jwt.decode(
+                token,
+                settings.jwt_secret_key,
+                algorithms=[settings.jwt_algorithm],
+            )
+
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+            username = payload.get("sub")
+
+            if not jti:
+                raise ValueError("Invalid token format")
+
+            # Get user info
+            db = get_database()
+            user = await db.users.find_one({"username": username})
+
+            if not user:
+                raise ValueError("User not found")
+
+            # Blacklist token
+            from datetime import datetime
+            expires_at = datetime.utcfromtimestamp(exp)
+            await AuthRepository.blacklist_token(
+                jti=jti,
+                token=token,
+                expires_at=expires_at,
+                user_id=user["_id"]
+            )
+
+        except JWTError:
+            raise ValueError("Invalid token")
