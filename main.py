@@ -1,9 +1,10 @@
-from app.core.dependencies import get_current_admin
-from fastapi import FastAPI, Depends
-
 import atexit
 import uvicorn
 
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.dependencies import get_current_admin
 from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.api.v1.router import router as v1_router
@@ -18,7 +19,13 @@ app = FastAPI(
 )
 
 app.include_router(v1_router)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allow_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+)
 # add auth for test purpose
 
 
@@ -41,5 +48,5 @@ if __name__ == "__main__":
                 port=settings.port,
                 host=settings.host,
                 log_level="warning",
-                reload=True if settings.environment == "development" else False,
+                reload=True if settings.environment == "LOCAL" else False,
                 proxy_headers=False)

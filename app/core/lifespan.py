@@ -14,8 +14,9 @@ logger = init_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Application starting...")
-
+    logger.info(".........................................................")
+    logger.info(".................Starting server.........................")
+    settings.pretty_print()
     # ---------------------
     # MongoDB Startup
     # ---------------------
@@ -36,6 +37,11 @@ async def lifespan(app: FastAPI):
 
         # Initialize TTL indexes
         await init_indexes()
+
+        if not settings.validation_check():
+            raise RuntimeError("Invalid environment for DEV mode")
+
+        # await user.create_admin_account()
 
     except Exception as e:
         logger.error("❌ MongoDB startup failed:", e)
